@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Patrimoine Patcher v9.11 → v9.12</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0a0f1c;color:#e5e7eb;padding:16px;min-height:100vh}
+.box{max-width:600px;margin:0 auto;background:#111827;border:1px solid #1f2937;border-radius:14px;padding:20px}
+h1{font-size:20px;margin-bottom:6px;color:#06b6d4}
+.sub{color:#9ca3af;font-size:13px;margin-bottom:18px;line-height:1.5}
+.step{background:#0a0f1c;border:1px solid #1f2937;border-radius:10px;padding:14px;margin-bottom:12px}
+.step-h{font-size:13px;color:#06b6d4;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px}
+.tabs{display:flex;gap:4px;margin-bottom:10px;background:#0a0f1c;padding:4px;border-radius:8px;border:1px solid #1f2937}
+.tab{flex:1;padding:8px;text-align:center;background:transparent;color:#9ca3af;font-size:12px;font-weight:600;border-radius:6px;cursor:pointer;border:0}
+.tab.active{background:#06b6d4;color:#0a0f1c}
+.pane{display:none}.pane.active{display:block}
+input[type=file]{width:100%;padding:14px;background:#1f2937;border:2px dashed #374151;border-radius:8px;color:#e5e7eb;font-size:14px;cursor:pointer}
+input[type=file]::file-selector-button{background:#06b6d4;color:#0a0f1c;border:0;padding:8px 14px;border-radius:6px;font-weight:600;cursor:pointer;margin-right:10px}
+input[type=text],input[type=url],textarea{width:100%;padding:12px;background:#1f2937;border:1px solid #374151;border-radius:8px;color:#e5e7eb;font-size:13px;font-family:inherit}
+textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:11px;resize:vertical}
+.row{display:flex;gap:8px;margin-top:8px}
+.row button{flex:1}
+button{width:100%;padding:13px;background:linear-gradient(135deg,#06b6d4,#0891b2);color:#0a0f1c;border:0;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+button.go{padding:14px;font-size:15px}
+button.sec{background:#1f2937;color:#06b6d4;border:1px solid #06b6d4}
+button:disabled{opacity:0.4;cursor:not-allowed;background:#374151;color:#9ca3af;border-color:transparent}
+#log{margin-top:14px;background:#0a0f1c;border:1px solid #1f2937;border-radius:8px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:11px;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;color:#9ca3af;line-height:1.5}
+.ok{color:#10b981}.err{color:#ef4444}.warn{color:#f59e0b}.info{color:#06b6d4}
+.dl{background:linear-gradient(135deg,#10b981,#059669);margin-top:10px}
+.tip{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.25);border-radius:8px;padding:10px;font-size:12px;color:#9ca3af;margin-top:8px;line-height:1.5}
+.tip b{color:#06b6d4}
+</style>
+</head><body>
+<div class="box">
+<h1>◈ PATCHEUR PATRIMOINE</h1>
+<div class="sub">v9.11 → v9.12<br>3 façons de charger ton fichier — choisis la plus simple.</div>
+
+<div class="step">
+<div class="step-h">1. Charger ton index.html</div>
+<div class="tabs">
+<button class="tab active" data-pane="p-url">URL GitHub</button>
+<button class="tab" data-pane="p-file">Fichier</button>
+<button class="tab" data-pane="p-text">Coller</button>
+</div>
+
+<div id="p-url" class="pane active">
+<input type="url" id="url" placeholder="https://raw.githubusercontent.com/USER/REPO/main/index.html" autocomplete="off" autocapitalize="off" spellcheck="false">
+<div class="tip"><b>Astuce :</b> sur GitHub, ouvre ton fichier, clique « Raw », et copie l'URL de la page. Elle commence par <i>raw.githubusercontent.com</i>.</div>
+<button class="sec" id="fetch">Récupérer depuis l'URL</button>
+</div>
+
+<div id="p-file" class="pane">
+<input type="file" id="f" accept=".html,.htm,.txt">
+<div class="tip"><b>Attention :</b> le fichier doit faire ~495 KB. Si tu vois 0 KB, c'est un téléchargement incomplet.</div>
+</div>
+
+<div id="p-text" class="pane">
+<textarea id="txt" placeholder="Colle ici tout le contenu de ton index.html…" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+<button class="sec" id="loadtxt">Charger depuis le texte</button>
+</div>
+</div>
+
+<div class="step">
+<div class="step-h">2. Appliquer les correctifs</div>
+<button class="go" id="go" disabled>Patcher le fichier</button>
+</div>
+
+<div id="log">En attente d'un fichier…</div>
+<button class="dl" id="dl" style="display:none">⬇ Télécharger index.html patché</button>
+</div>
+
+<script>
+const PATCHES = [["function renderMouvements(e){const dispC_mv=S.dispCur?.[e]||\"EUR\",fxC_mv=getFX(dispC_mv);const t=\"mv-\"+e+\"-section\",n=document.getElementById(t);if(!n)return;S.mouvements||(S.mouvements={}),S.mouvements[e]||(S.mouvements[e]=[]);", "function renderMouvements(e){const dispC_mv=S.dispCur?.[e]||\"EUR\",fxC_mv=getFX(dispC_mv);const t=\"mv-\"+e+\"-section\",n=document.getElementById(t);if(!n)return;S.mouvements||(S.mouvements={}),S.mouvements[e]||(S.mouvements[e]=[]);const _mvPrev={};const _mvActive=document.activeElement;const _mvFocusedId=(_mvActive&&_mvActive.id&&_mvActive.id.endsWith(\"-\"+e)&&n.contains(_mvActive))?_mvActive.id:null;let _mvSelStart=null,_mvSelEnd=null;if(_mvFocusedId){try{_mvSelStart=_mvActive.selectionStart;_mvSelEnd=_mvActive.selectionEnd}catch(_){}}[\"mv-date-\",\"mv-type-\",\"mv-montant-\",\"mv-devise-\",\"mv-note-\"].forEach(p=>{const el=document.getElementById(p+e);if(el&&null!=el.value&&\"\"!==el.value)_mvPrev[p+e]=el.value});"], [".join(\"\")}\\n    </div>\\n  </div>`}function addMouvement", ".join(\"\")}\\n    </div>\\n  </div>`;Object.entries(_mvPrev).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v});if(_mvFocusedId){const el=document.getElementById(_mvFocusedId);if(el){try{el.focus({preventScroll:true})}catch(_){el.focus()}if(null!=_mvSelStart&&\"function\"==typeof el.setSelectionRange){try{el.setSelectionRange(_mvSelStart,_mvSelEnd)}catch(_){}}}}}function addMouvement"], ["<input type=\"date\" id=\"ib-date\"></div></div><button class=\"btn btn-p\" onclick=\"addIBKR()\">+ Ajouter la position</button>", "<input type=\"date\" id=\"ib-date\"></div><div class=\"field\" style=\"grid-column:1/-1;flex-direction:row;align-items:flex-start;gap:10px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.20);border-radius:8px;padding:10px 14px\"><input type=\"checkbox\" id=\"ib-from-liq\" style=\"width:16px;height:16px;accent-color:var(--sky);flex-shrink:0;margin-top:2px\"><label for=\"ib-from-liq\" style=\"font-size:11px;font-weight:600;color:var(--sky);text-transform:none;letter-spacing:0;cursor:pointer;line-height:1.4\">Prendre dans ma liquidité IBKR<br><span style=\"font-weight:400;color:var(--text2);font-size:10px\">Décoché : la position s'ajoute simplement au patrimoine sans toucher la liquidité</span></label></div></div><button class=\"btn btn-p\" onclick=\"addIBKR()\">+ Ajouter la position</button>"], ["<input type=\"date\" id=\"bn-date\"></div></div><button class=\"btn btn-p\" onclick=\"addBinance()\">+ Ajouter la position</button>", "<input type=\"date\" id=\"bn-date\"></div><div class=\"field\" style=\"grid-column:1/-1;flex-direction:row;align-items:flex-start;gap:10px;background:rgba(240,180,41,0.06);border:1px solid rgba(240,180,41,0.20);border-radius:8px;padding:10px 14px\"><input type=\"checkbox\" id=\"bn-from-liq\" style=\"width:16px;height:16px;accent-color:var(--amber);flex-shrink:0;margin-top:2px\"><label for=\"bn-from-liq\" style=\"font-size:11px;font-weight:600;color:var(--amber);text-transform:none;letter-spacing:0;cursor:pointer;line-height:1.4\">Prendre dans ma liquidité Binance<br><span style=\"font-weight:400;color:var(--text2);font-size:10px\">Décoché : la position s'ajoute simplement au patrimoine sans toucher la liquidité</span></label></div></div><button class=\"btn btn-p\" onclick=\"addBinance()\">+ Ajouter la position</button>"], ["afterAdd(\"ibkr\"),(function(){const _p=S.ibkr[S.ibkr.length-1]||{};", "afterAdd(\"ibkr\"),(function(){const _fl=document.getElementById(\"ib-from-liq\");const _useLiq=!!(_fl&&_fl.checked);if(_fl)_fl.checked=false;if(_useLiq&&e>0&&t>0){const _posCur=gv(\"ib-currency\")||\"CHF\";const _liqCur=S.liqCur?.ibkr||\"CHF\";const _fxLiq=getFX(_liqCur)||1;const _costInLiqCur=e*t*getFX(_posCur)/_fxLiq;S.liq=S.liq||{};if(null==S.liq.ibkr)S.liq.ibkr=0;S.liq.ibkr=(parseFloat(S.liq.ibkr)||0)-_costInLiqCur;save();renderIbkr();renderOverview();toast(\"Position ouverte — liquidité IBKR −\"+N(_costInLiqCur)+\" \"+_liqCur,4500)}})(),(function(){const _p=S.ibkr[S.ibkr.length-1]||{};"], ["afterAdd(\"binance\"),(function(){const _s=S.binance[S.binance.length-1]?.sym||\"\";", "afterAdd(\"binance\"),(function(){const _fl=document.getElementById(\"bn-from-liq\");const _useLiq=!!(_fl&&_fl.checked);if(_fl)_fl.checked=false;if(_useLiq&&e>0&&t>0){const _liqCur=S.liqCur?.binance||\"USDT\";const _fxLiq=getFX(_liqCur)||1;const _costInLiqCur=e*t*getFX(\"USDT\")/_fxLiq;S.liq=S.liq||{};if(null==S.liq.binance)S.liq.binance=0;S.liq.binance=(parseFloat(S.liq.binance)||0)-_costInLiqCur;save();renderBinance();renderOverview();toast(\"Position ouverte — liquidité Binance −\"+N(_costInLiqCur)+\" \"+_liqCur,4500)}})(),(function(){const _s=S.binance[S.binance.length-1]?.sym||\"\";"], ["APP_VERSION=\"v9.11\"", "APP_VERSION=\"v9.12\""], ["<span id=\"app-version\" style=\"color:var(--cyan);font-family:var(--mono)\">v9.11</span>", "<span id=\"app-version\" style=\"color:var(--cyan);font-family:var(--mono)\">v9.12</span>"], ["<title>◈ PATRIMOINE v9.11</title>", "<title>◈ PATRIMOINE v9.12</title>"]];
+const $=id=>document.getElementById(id);
+const log=(msg,cls)=>{const s=document.createElement("div");if(cls)s.className=cls;s.textContent=msg;$("log").appendChild(s);$("log").scrollTop=$("log").scrollHeight};
+const clearLog=()=>{$("log").innerHTML=""};
+let sourceText=null,patchedText=null;
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click",()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".pane").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    $(t.dataset.pane).classList.add("active");
+  });
+});
+
+const setSource=(text,label)=>{
+  clearLog();
+  if(!text||text.length<1000){log("✗ Fichier trop petit ou vide ("+text.length+" octets). Ce n'est pas un index.html valide.","err");$("go").disabled=true;return}
+  if(!text.includes("Patrimoine")&&!text.includes("APP_VERSION")){log("✗ Ce ne semble pas être le fichier Patrimoine.","err");$("go").disabled=true;return}
+  log("✓ "+label+" ("+(text.length/1024).toFixed(1)+" KB)","ok");
+  const m=text.match(/APP_VERSION="(v[\d.]+)"/);
+  if(m)log("Version détectée : "+m[1],"info");
+  sourceText=text;
+  $("go").disabled=false;
+  $("dl").style.display="none";
+  patchedText=null;
+};
+
+$("f").addEventListener("change",async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{const text=await file.text();setSource(text,"Fichier : "+file.name)}
+  catch(err){clearLog();log("✗ Lecture impossible : "+err.message,"err")}
+});
+
+$("fetch").addEventListener("click",async()=>{
+  const url=$("url").value.trim();
+  if(!url){clearLog();log("✗ Colle une URL d'abord.","err");return}
+  clearLog();log("Téléchargement depuis "+url+"…","info");
+  try{
+    const r=await fetch(url,{cache:"no-store"});
+    if(!r.ok){log("✗ Erreur HTTP "+r.status,"err");return}
+    const text=await r.text();
+    setSource(text,"URL");
+  }catch(err){log("✗ Erreur réseau : "+err.message,"err");log("Si l'URL est privée ou pas en CORS, utilise l'onglet « Coller » à la place.","warn")}
+});
+
+$("loadtxt").addEventListener("click",()=>{
+  const text=$("txt").value;
+  setSource(text,"Texte collé");
+});
+
+$("go").addEventListener("click",()=>{
+  if(!sourceText)return;
+  $("go").disabled=true;
+  let text=sourceText;
+  if(text.includes("v9.12")&&!text.includes("v9.11")){log("⚠ Le fichier est déjà en v9.12 — abandon.","warn");return}
+  log("");log("Application des "+PATCHES.length+" patches…","info");
+  let ok=0,fail=0;
+  for(let i=0;i<PATCHES.length;i++){
+    const [oldS,newS]=PATCHES[i];
+    const n=text.split(oldS).length-1;
+    if(n===1){text=text.replace(oldS,newS);log("✓ Patch "+(i+1)+"/"+PATCHES.length,"ok");ok++}
+    else if(n===0){log("✗ Patch "+(i+1)+"/"+PATCHES.length+" : motif introuvable","err");fail++}
+    else{log("✗ Patch "+(i+1)+"/"+PATCHES.length+" : "+n+" occurrences (attendu 1)","err");fail++}
+  }
+  log("");
+  log("Résumé : "+ok+" appliqués, "+fail+" échecs",fail?"warn":"ok");
+  patchedText=text;
+  log("Taille finale : "+(text.length/1024).toFixed(1)+" KB","info");
+  $("dl").style.display="block";
+});
+
+$("dl").addEventListener("click",()=>{
+  if(!patchedText)return;
+  const blob=new Blob([patchedText],{type:"text/html;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="index.html";
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},100);
+  log("⬇ Téléchargement lancé : index.html","ok");
+});
+</script>
+</body></html>
